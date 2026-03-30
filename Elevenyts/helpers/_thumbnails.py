@@ -152,7 +152,7 @@ class Thumbnail:
             )
 
             # Control icons (if available)
-            icons_path = "HasiiMusic/helpers/play_icons.png"
+            icons_path = "Elevenyts/helpers/play_icons.png"
             if os.path.isfile(icons_path):
                 with Image.open(icons_path) as icons_img:
                     ic = icons_img.resize((ICONS_W, ICONS_H)).convert("RGBA")
