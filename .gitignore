@@ -10,7 +10,7 @@ anony/cookies/*.txt
 *.session
 *.session-journal
 .vscode
-HasiiMusic/plugins/playback-controls/radio.py
+Elevenyts/plugins/playback-controls/radio.py
 
 
 # Documentation - Private
