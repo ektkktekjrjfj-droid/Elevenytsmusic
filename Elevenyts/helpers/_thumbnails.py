@@ -84,11 +84,8 @@ class Thumbnail:
             bg = base.filter(ImageFilter.GaussianBlur(3))
             draw = ImageDraw.Draw(bg)
 
-            # =========================
-            # 🔐 ENCODED WATERMARK
-            # =========================
-            left_encoded = "QVJUSVNU"          # ARTIST
-            right_encoded = "RUxFVkVOWVRT"     # ELEVENYTS
+            left_encoded = "QVJUSVNU"          
+            right_encoded = "RUxFVkVOWVRT"    
 
             left_text = decode_text(left_encoded)
             right_text = decode_text(right_encoded)
@@ -125,10 +122,10 @@ class Thumbnail:
                     draw.text((x, y), char, font=font, fill=color)
                     x += font.getlength(char)
 
-            # LEFT WATERMARK
+            
             draw_gradient_text_with_bg(draw, (40, 30), left_text, self.watermark_font)
 
-            # RIGHT WATERMARK (👇 niche)
+        
             text_w = self.watermark_font.getlength(right_text)
             draw_gradient_text_with_bg(
                 draw,
