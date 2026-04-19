@@ -5,7 +5,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQ
 from pytgcalls import PyTgCalls
 from pytgcalls.types import AudioPiped
 import datetime
-import config # Saari details config.py se uthayega
+import config 
 
 # --- CLIENTS SETUP ---
 app = Client(
@@ -24,7 +24,7 @@ user_app = Client(
 
 call_py = PyTgCalls(user_app)
 
-# --- UTILS (Exact Real-Time Design) ---
+# --- UI UTILS (Exact Screenshot Style) ---
 def get_seekbar(current, total):
     percentage = (current / (total if total > 0 else 1)) * 100
     completed = int(percentage / 10)
@@ -34,17 +34,34 @@ def get_seekbar(current, total):
 def format_time(seconds):
     return str(datetime.timedelta(seconds=int(seconds)))[2:].split('.')[0]
 
-# --- PLAY HANDLER (GROUP ONLY) ---
+# --- START COMMAND (Private Design) ---
+@app.on_message(filters.command("start") & filters.private)
+async def start_cmd(client, message):
+    start_text = (
+        "👋 **WELCOME TO THE MOST POWERFUL MUSIC BOT!**\n\n"
+        "✨ **I CAN STREAM HIGH QUALITY MUSIC 24/7 WITHOUT ANY LAG.**\n\n"
+        "🥀 **OWNER :** [𝐊𝐔𝐒𝐇𝐀𝐋](https://t.me/Kushal_Owner)\n"
+        "📢 **SUPPORT :** [CLICK HERE](https://t.me/KushalStorez)\n\n"
+        "**POWERED BY @AHMED_X_STOREZ**"
+    )
+    await message.reply_text(
+        start_text,
+        disable_web_page_preview=True,
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("➕ ADD ME TO YOUR GROUP", url=f"https://t.me/{client.me.username}?startgroup=true")
+        ]])
+    )
+
+# --- PLAY HANDLER (Exact Screenshot UI) ---
 @app.on_message(filters.command("play") & filters.group)
 async def play_music(client, message):
     if len(message.command) < 2:
-        return await message.reply_text("🔎 **Gᴀᴀɴᴇ ᴋᴀ ɴᴀᴀᴍ ʟɪᴋʜᴏ!**")
+        return await message.reply_text("🔎 **SEARCHING FOR YOUR TRACK...**")
 
     query = " ".join(message.command[1:])
-    m = await message.reply_text("🔎 **Sᴇᴀʀᴄʜɪɴɢ...**")
+    m = await message.reply_text("🔎 **SEARCHING...**")
     chat_id = message.chat.id
 
-    # ANTI-OVERLAP: Naya chalne se pehle purana band
     try:
         await call_py.leave_group_call(chat_id)
     except:
@@ -56,76 +73,82 @@ async def play_music(client, message):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
             url = info['url']
-            title = info.get('title', 'Music')
+            title = info.get('title', 'MUSIC').upper()
             duration_sec = info.get('duration', 0)
             thumb = info.get('thumbnail')
             dur_min = format_time(duration_sec)
 
-        # Assistant VC join karega
         await call_py.join_group_call(chat_id, AudioPiped(url))
 
-        # UI Text (Branding Removed)
+        # --- YE RAHA SCREENSHOT WALA EXACT DESIGN ---
         caption = (
-            f"➻ **Sᴛᴀʀᴛᴇᴅ Sᴛʀᴇᴀᴍɪɴɢ |** ❞\n\n"
-            f"✨ **Tɪᴛʟᴇ :** #{title[:35]}...\n"
-            f"⏱ **Dᴜʀᴀᴛɪᴏɴ :** {dur_min} **ᴍɪɴᴜᴛᴇs**\n"
-            f"🥀 **Rᴇǫᴜᴇsᴛᴇᴅ ʙʏ :** 🦋💸 ⃪♔‌⃟𝐊𝐔𝐒𝐇𝐀𝐋"
+            f"➻ **STARTED STREAMING |** ❞\n\n"
+            f"✨ **TITLE :** {title[:35]}\n"
+            f"⏱ **DURATION :** {dur_min} **MINUTES**\n"
+            f"🥀 **REQUESTED BY :** 🦋💸 ⃪♔‌⃟𝐊𝐔𝐒𝐇𝐀𝐋"
         )
 
-        def player_buttons(curr):
-            return InlineKeyboardMarkup([
-                [InlineKeyboardButton(get_seekbar(curr, duration_sec), callback_data="none")],
-                [
-                    InlineKeyboardButton("▷", "resume_cb"), 
-                    InlineKeyboardButton("II", "pause_cb"), 
-                    InlineKeyboardButton("↻", "replay_cb"), 
-                    InlineKeyboardButton("‣‣", "skip_cb"), 
-                    InlineKeyboardButton("▢", "stop_cb")
-                ],
-                [InlineKeyboardButton("➕ Aᴅᴅ Mᴇ", url=f"https://t.me/{client.me.username}?startgroup=true")]
-            ])
+        buttons = InlineKeyboardMarkup([
+            [InlineKeyboardButton(get_seekbar(0, duration_sec), callback_data="none")],
+            [
+                InlineKeyboardButton("▷ RESUME", "resume_cb"), 
+                InlineKeyboardButton("II PAUSE", "pause_cb")
+            ],
+            [
+                InlineKeyboardButton("↻ REPLAY", "replay_cb"), 
+                InlineKeyboardButton("‣‣ SKIP", "skip_cb"), 
+                InlineKeyboardButton("▢ STOP", "stop_cb")
+            ],
+            [InlineKeyboardButton("➕ ADD ME TO YOUR GROUP", url=f"https://t.me/{client.me.username}?startgroup=true")]
+        ])
 
         post = await message.reply_photo(
             photo=thumb if thumb else "https://telegra.ph/file/bc3343358055a40b85354.jpg",
             caption=caption,
-            reply_markup=player_buttons(0)
+            reply_markup=buttons
         )
         await m.delete()
 
         # Real-time update loop
         curr_time = 0
         while curr_time < duration_sec:
-            await asyncio.sleep(10)
-            curr_time += 10
+            await asyncio.sleep(15)
+            curr_time += 15
             try:
-                await post.edit_reply_markup(reply_markup=player_buttons(curr_time))
+                new_seekbar = get_seekbar(curr_time, duration_sec)
+                await post.edit_reply_markup(reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton(new_seekbar, callback_data="none")],
+                    [InlineKeyboardButton("▷ RESUME", "resume_cb"), InlineKeyboardButton("II PAUSE", "pause_cb")],
+                    [InlineKeyboardButton("↻ REPLAY", "replay_cb"), InlineKeyboardButton("‣‣ SKIP", "skip_cb"), InlineKeyboardButton("▢ STOP", "stop_cb")],
+                    [InlineKeyboardButton("➕ ADD ME TO YOUR GROUP", url=f"https://t.me/{client.me.username}?startgroup=true")]
+                ]))
             except: break
 
     except Exception as e:
-        await m.edit(f"❌ Error: {e}")
+        await m.edit(f"❌ **ERROR :** `{e}`")
 
-# --- CALLBACK HANDLERS ---
+# --- CALLBACK HANDLERS (Systematic Response) ---
 @app.on_callback_query()
 async def cb_handler(client, query: CallbackQuery):
     chat_id = query.message.chat.id
     if query.data == "pause_cb":
         await call_py.pause_stream(chat_id)
-        await query.answer("Stream Paused ⏸")
+        await query.answer("STREAM PAUSED ⏸", show_alert=True)
     elif query.data == "resume_cb":
         await call_py.resume_stream(chat_id)
-        await query.answer("Stream Resumed ▶️")
+        await query.answer("STREAM RESUMED ▶️", show_alert=True)
     elif query.data == "stop_cb":
         await call_py.leave_group_call(chat_id)
         await query.message.delete()
-        await query.answer("Stream Stopped 🛑")
+        await query.answer("STREAM STOPPED 🛑")
 
-# --- START ---
+# --- BOOTING ---
 async def start_bot():
     await app.start()
     await user_app.start()
     await call_py.start()
-    print("✅ Music Bot Ready to Blast!")
+    print("✅ YOUR PREMIUM BOT IS LIVE, KUSHAL BHAI!")
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(start_bot()
+    asyncio.get_event_loop().run_until_complete(start_bot())
